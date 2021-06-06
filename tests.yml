@@ -1,17 +1,15 @@
 - name: Simple test
-  command: ls -l
-  pre_command: 
-  atfer_command: pwd
+  command: ls -l 
+  after_command: pwd
   expected: 0
 
 - name: Test wit pre command
   command: ls -la
   pre_command: echo success
-  atfer_command: 
   expected: 1
 
 - name: Complicated test
   command: ls -la
   pre_command: echo success
-  atfer_command: pwd
+  after_command: pwd
   expected: 0

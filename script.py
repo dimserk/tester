@@ -60,22 +60,38 @@ if __name__ == "__main__":
     # TODO Validate tests
     # TODO print Valid tests
 
+    log_file = open("log.txt", "w")
+
     i = 1
     for test in tests:
         if pre_command_key in  test:
             result = e_call(test[pre_command_key])
-            # TODO log(result)
+            log_file.write("Pre command:\n")
+            log_file.write(result.stdout.decode("utf-8") + "\n")
+            log_file.write(result.stderr.decode("utf-8") + "\n")
+            log_file.write("\n")
 
         result = e_call(test[command_key])
-        # TODO log(result)
+        log_file.write(result.stdout.decode("utf-8") + "\n")
+        log_file.write(result.stderr.decode("utf-8") + "\n")
+        log_file.write("return: " + str(result.returncode)
+             + " expected: " + str(test[expected_key]))
+        log_file.write("\n")
         test_result = result.returncode
 
         if after_command_key in test:
             result = e_call(test[after_command_key])
-            # TODO log(result)
+            log_file.write("After command:\n")
+            log_file.write(result.stdout.decode("utf-8") + "\n")
+            log_file.write(result.stderr.decode("utf-8") + "\n")
+            log_file.write("\n")
 
+        log_file.write("=" * 80 + "\n")
+
+        print("=" * 80)
         print("{:>3}/{:<3}".format(i, total_tests), end=' ')
-    
+        i += 1
+
         if test_result == test[expected_key]:
             print(pass_string, end=' ')
         else:
@@ -84,7 +100,7 @@ if __name__ == "__main__":
         if name_key in test:
             print(test[name_key])
 
-        i += 1
+    log_file.close()
 
     # log_file = open("log.txt", "w")
 
