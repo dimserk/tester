@@ -13,3 +13,6 @@
   pre_command: echo success
   after_command: pwd
   expected: 0
+
+- command: echo success
+  expected: 0
