@@ -50,6 +50,34 @@ after_command_key = "after_command"
 name_key = "name"
 expected_key = "expected"
 
+def _log(stream, result):
+    stream.write("stdout:\n{}\nstderr:\n{}\n".format(
+        result.stdout.decode("utf-8") if len(result.stdout) != 0 else "None\n",
+        result.stderr.decode("utf-8") if len(result.stderr) != 0 else "None\n"
+    ))
+
+def log(stream, p_res, res, a_res, test):
+    if (p_res != None):
+        stream.write("Pre command: {}\n".format(test[pre_command_key]))
+        _log(stream, p_res)
+        stream.write("\n" + "-" * 40 + "\n\n")
+
+
+    stream.write("Command: {}\n".format(test[command_key]))
+    _log(stream, res)
+    stream.write("return:   {}\nexpected: {}\n".format(
+        res.returncode,
+        test[expected_key]
+    ))
+
+    if (a_res != None):
+        stream.write("\n" + "-" * 40 + "\n\n")
+        stream.write("After command: {}\n".format(test[after_command_key]))
+        _log(stream, a_res)
+
+    stream.write("\n" + "=" * 79 + "\n\n")
+
+
 if __name__ == "__main__":
     with open(yaml_config_filename) as yaml_config:
         tests = yaml.load(yaml_config, Loader=yaml.CLoader)
@@ -64,31 +92,23 @@ if __name__ == "__main__":
 
     i = 1
     for test in tests:
-        if pre_command_key in  test:
-            result = e_call(test[pre_command_key])
-            log_file.write("Pre command:\n")
-            log_file.write(result.stdout.decode("utf-8") + "\n")
-            log_file.write(result.stderr.decode("utf-8") + "\n")
-            log_file.write("\n")
+        pre_res = None
+        res     = None
+        aft_res = None
 
-        result = e_call(test[command_key])
-        log_file.write(result.stdout.decode("utf-8") + "\n")
-        log_file.write(result.stderr.decode("utf-8") + "\n")
-        log_file.write("return: " + str(result.returncode)
-             + " expected: " + str(test[expected_key]))
-        log_file.write("\n")
-        test_result = result.returncode
+        if pre_command_key in  test:
+            pre_res = e_call(test[pre_command_key])
+
+        res = e_call(test[command_key])
+        test_result = res.returncode
 
         if after_command_key in test:
-            result = e_call(test[after_command_key])
-            log_file.write("After command:\n")
-            log_file.write(result.stdout.decode("utf-8") + "\n")
-            log_file.write(result.stderr.decode("utf-8") + "\n")
-            log_file.write("\n")
+            aft_res = e_call(test[after_command_key])
 
-        log_file.write("=" * 80 + "\n")
+        log(log_file, pre_res, res, aft_res, test)
 
-        print("=" * 80)
+        # Вывод информации в консоль
+        print("-" * 80)
         print("{:>3}/{:<3}".format(i, total_tests), end=' ')
         i += 1
 
