@@ -42,20 +42,42 @@ def log_test(stream, p_res, res, a_res, test):
     ))
 
     if (a_res != None):
-        stream.write("\n" + "-" * 40 + "\n\n")
+        stream.write("\n" + "-" * 5 + ">\n\n")
         stream.write("After command: {}\n".format(test[after_command_key]))
         log(stream, a_res)
 
     stream.write("\n" + "=" * 79 + "\n\n")
 
 def validate_tests(tests):
-    pass
+    valid_tests = []
+
+    for test in tests:
+        # Обязательные параметры теста
+        if expected_key not in test:
+            continue
+
+        if command_key not in test:
+            continue
+
+        # Необязательные параметры теста
+        if pre_command_key not in test:
+            test[pre_command_key] = None
+
+        if after_command_key not in test:
+            test[after_command_key] = None
+
+        if name_key not in test:
+            test[name_key] = None
+
+        valid_tests.append(test)
+
+    return valid_tests
 
 if __name__ == "__main__":
     with open(yaml_config_filename) as yaml_config:
         tests = yaml.load(yaml_config, Loader=yaml.CLoader)
 
-    validate_tests(tests)
+    tests = validate_tests(tests)
 
     total_tests = len(tests)
     print(f"Found {total_tests} tests")
@@ -83,7 +105,7 @@ if __name__ == "__main__":
             i,
             total_tests,
             pass_string if test_result == test[expected_key] else fail_string,
-            test[name_key]
+            test[name_key] if test[name_key] != None else ""
         ))
 
     log_file.close()

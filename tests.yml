@@ -16,3 +16,5 @@
 
 - command: echo success
   expected: 0
+
+- command: echo $?
