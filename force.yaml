@@ -1,0 +1,9 @@
+- name: Simple test
+  command: ls -l 
+  after_command: pwd
+  expected: 0
+
+- name: Test wit pre command
+  command: ls -la
+  pre_command: echo success
+  expected: 1

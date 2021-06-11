@@ -1,6 +1,3 @@
-yaml_config_filename = "tests.yml"
-tese_log_filename    = "test_log.txt"
-
 name_key          = "name"
 pre_command_key   = "pre_command"
 command_key       = "command"
@@ -10,6 +7,7 @@ expected_key      = "expected"
 fail_string = "\033[41m\033[37m\033[4m Failed \033[0m"
 pass_string = "\033[42m\033[37m\033[4m Passed \033[0m"
 
+import os
 import yaml
 import subprocess
 
@@ -31,7 +29,7 @@ def log_test(stream, p_res, res, a_res, test):
     if (p_res != None):
         stream.write("Pre command: {}\n".format(test[pre_command_key]))
         log(stream, p_res)
-        stream.write("\n" + "-" * 40 + "\n\n")
+        stream.write("\n" + "=" * 5 + ">\n\n")
 
 
     stream.write("Command: {}\n".format(test[command_key]))
@@ -42,7 +40,7 @@ def log_test(stream, p_res, res, a_res, test):
     ))
 
     if (a_res != None):
-        stream.write("\n" + "-" * 5 + ">\n\n")
+        stream.write("\n" + "=" * 5 + ">\n\n")
         stream.write("After command: {}\n".format(test[after_command_key]))
         log(stream, a_res)
 
@@ -74,38 +72,53 @@ def validate_tests(tests):
     return valid_tests
 
 if __name__ == "__main__":
-    with open(yaml_config_filename) as yaml_config:
-        tests = yaml.load(yaml_config, Loader=yaml.CLoader)
+    #os.chdir("bin")
+    all_files = os.listdir(".")
 
-    tests = validate_tests(tests)
+    if all_files.count == 0:
+        print("No test groups found")
+        exit(1)
 
-    total_tests = len(tests)
-    print(f"Found {total_tests} tests")
+    test_files = [file for file in all_files 
+        if file.find(".yml") != -1 or file.find(".yaml") != -1]
 
-    log_file = open("log.txt", "w")
+    for test_file in test_files:
+        with open(test_file) as yaml_config:
+            tests = yaml.load(yaml_config, Loader=yaml.CLoader)
 
-    i = 0
-    for test in tests:
-        pre_res = None
-        res     = None
-        aft_res = None
-        i += 1
+        test_group_name = os.path.splitext(os.path.basename(test_file))[0]
+        print(f"Test group - {test_group_name}")
 
-        pre_res = e_call(test[pre_command_key])
+        tests = validate_tests(tests)
 
-        res = e_call(test[command_key])
-        test_result = res.returncode
+        total_tests = len(tests)
+        print(f"Found {total_tests} tests")
 
-        aft_res = e_call(test[after_command_key])
+        log_file = open(f"{test_group_name}_log.txt", "w")
 
-        log_test(log_file, pre_res, res, aft_res, test)
+        i = 0
+        for test in tests:
+            pre_res = None
+            res     = None
+            aft_res = None
+            i += 1
 
-        # Вывод информации в консоль
-        print("-" * 80 + "\n{:>3}/{:<3} {} {}".format(
-            i,
-            total_tests,
-            pass_string if test_result == test[expected_key] else fail_string,
-            test[name_key] if test[name_key] != None else ""
-        ))
+            pre_res = e_call(test[pre_command_key])
 
-    log_file.close()
+            res = e_call(test[command_key])
+            test_result = res.returncode
+
+            aft_res = e_call(test[after_command_key])
+
+            log_test(log_file, pre_res, res, aft_res, test)
+
+            # Вывод информации в консоль
+            print("-" * 80 + "\n{:>3}/{:<3} {} {}".format(
+                i,
+                total_tests,
+                pass_string if test_result == test[expected_key] else fail_string,
+                test[name_key] if test[name_key] != None else ""
+            ))
+
+        log_file.close()
+        print()
