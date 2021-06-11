@@ -7,9 +7,12 @@ expected_key      = "expected"
 fail_string = "\033[41m\033[37m\033[4m Failed \033[0m"
 pass_string = "\033[42m\033[37m\033[4m Passed \033[0m"
 
+splitter_len = 79
+
 import os
 import yaml
 import subprocess
+import argparse
 
 def e_call(command):
     if command == None:
@@ -44,7 +47,7 @@ def log_test(stream, p_res, res, a_res, test):
         stream.write("After command: {}\n".format(test[after_command_key]))
         log(stream, a_res)
 
-    stream.write("\n" + "=" * 79 + "\n\n")
+    stream.write("\n" + "=" * splitter_len + "\n\n")
 
 def validate_tests(tests):
     valid_tests = []
@@ -72,6 +75,10 @@ def validate_tests(tests):
     return valid_tests
 
 if __name__ == "__main__":
+    argparser = argparse.ArgumentParser(description="Test util")
+    argparser.add_argument("--no-log", "-n", help="turn off logging", action='store_true')
+    args = argparser.parse_args()
+
     #os.chdir("bin")
     all_files = os.listdir(".")
 
@@ -94,7 +101,9 @@ if __name__ == "__main__":
         total_tests = len(tests)
         print(f"Found {total_tests} tests")
 
-        log_file = open(f"{test_group_name}_log.txt", "w")
+        test_log_name = f"{test_group_name}_log.txt"
+        if not args.no_log and os.path.exists(test_log_name):
+            os.remove(test_log_name)
 
         i = 0
         for test in tests:
@@ -110,15 +119,16 @@ if __name__ == "__main__":
 
             aft_res = e_call(test[after_command_key])
 
-            log_test(log_file, pre_res, res, aft_res, test)
-
             # Вывод информации в консоль
-            print("-" * 80 + "\n{:>3}/{:<3} {} {}".format(
+            print("-" * splitter_len + "\n{:>3}/{:<3} {} {}".format(
                 i,
                 total_tests,
                 pass_string if test_result == test[expected_key] else fail_string,
                 test[name_key] if test[name_key] != None else ""
             ))
 
-        log_file.close()
-        print()
+            if not args.no_log:
+                with open(test_log_name, "a") as log_file:
+                    log_test(log_file, pre_res, res, aft_res, test)
+
+        print("-" * splitter_len+ "\n")
