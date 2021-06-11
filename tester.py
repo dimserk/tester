@@ -50,10 +50,11 @@ def e_call(command):
             capture_output=True)
 
 def log(stream, result):
-    stream.write("stdout:\n{}\nstderr:\n{}\n".format(
-        result.stdout.decode("utf-8") if len(result.stdout) != 0 else "None\n",
-        result.stderr.decode("utf-8") if len(result.stderr) != 0 else "None\n"
-    ))
+    stream.write("{}".format(result.stdout.decode("utf-8") 
+        if len(result.stdout) != 0 else "\n"))
+
+    if len(result.stderr) != 0:
+        stream.write("stderr:\n{}\n".format(result.stderr.decode("utf-8")))
 
 def log_test(stream, p_res, res, a_res, test):
     if (p_res != None):
