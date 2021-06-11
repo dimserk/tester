@@ -1,3 +1,10 @@
+import os
+import sys
+import yaml
+import argparse
+import subprocess
+
+# Ключевые строки словаря с тестом
 name_key          = "name"
 pre_command_key   = "pre_command"
 command_key       = "command"
@@ -9,10 +16,30 @@ pass_string = "\033[42m\033[37m\033[4m Passed \033[0m"
 
 splitter_len = 79
 
-import os
-import yaml
-import subprocess
-import argparse
+def validate_tests(tests):
+    valid_tests = []
+
+    for test in tests:
+        # Обязательные параметры теста
+        if expected_key not in test:
+            continue
+
+        if command_key not in test:
+            continue
+
+        # Необязательные параметры теста
+        if pre_command_key not in test:
+            test[pre_command_key] = None
+
+        if after_command_key not in test:
+            test[after_command_key] = None
+
+        if name_key not in test:
+            test[name_key] = None
+
+        valid_tests.append(test)
+
+    return valid_tests
 
 def e_call(command):
     if command == None:
@@ -49,37 +76,13 @@ def log_test(stream, p_res, res, a_res, test):
 
     stream.write("\n" + "=" * splitter_len + "\n\n")
 
-def validate_tests(tests):
-    valid_tests = []
-
-    for test in tests:
-        # Обязательные параметры теста
-        if expected_key not in test:
-            continue
-
-        if command_key not in test:
-            continue
-
-        # Необязательные параметры теста
-        if pre_command_key not in test:
-            test[pre_command_key] = None
-
-        if after_command_key not in test:
-            test[after_command_key] = None
-
-        if name_key not in test:
-            test[name_key] = None
-
-        valid_tests.append(test)
-
-    return valid_tests
-
 if __name__ == "__main__":
     argparser = argparse.ArgumentParser(description="Test util")
     argparser.add_argument("--no-log", "-n", help="turn off logging", action='store_true')
     args = argparser.parse_args()
 
-    #os.chdir("bin")
+    # Получение всех файлов, находящихся в одной директории с этим файлом
+    os.chdir(os.path.split(os.path.abspath(sys.argv[0]))[0])
     all_files = os.listdir(".")
 
     if all_files.count == 0:
