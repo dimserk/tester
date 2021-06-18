@@ -79,12 +79,19 @@ def log_test(stream, p_res, res, a_res, test):
 
 if __name__ == "__main__":
     argparser = argparse.ArgumentParser(description="Test util")
-    argparser.add_argument("--no-log", "-n", help="turn off logging", action='store_true')
+    argparser.add_argument("--no-log", "-n", help="turn off logging",
+        action='store_true')
+    argparser.add_argument("--test-dir", "-t",
+        help="point to tests dir [default .]", default=".")
     args = argparser.parse_args()
 
     # Получение всех файлов, находящихся в одной директории с этим файлом
     os.chdir(os.path.split(os.path.abspath(sys.argv[0]))[0])
-    all_files = os.listdir(".")
+    try:
+        all_files = os.listdir(args.test_dir)
+    except FileNotFoundError:
+        print(f"Can not look for tests at {args.test_dir}")
+        sys.exit(1)
 
     if all_files.count == 0:
         print("No test groups found")
