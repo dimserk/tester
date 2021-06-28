@@ -3,6 +3,7 @@ import sys
 import yaml
 import argparse
 import subprocess
+from math import ceil
 
 # Ключевые строки словаря с тестом
 name_key          = "name"
@@ -116,17 +117,16 @@ if __name__ == "__main__":
         if not args.no_log and os.path.exists(test_log_name):
             os.remove(test_log_name)
 
-        i = 0
-        for test in tests:
+        passed_tests = 0
+        for i, test in enumerate(tests, start=1):
             pre_res = None
             res     = None
             aft_res = None
-            i += 1
 
             pre_res = e_call(test[pre_command_key])
 
             res = e_call(test[command_key])
-            test_result = res.returncode
+            test_result = res.returncode == test[expected_key]
 
             aft_res = e_call(test[after_command_key])
 
@@ -134,12 +134,16 @@ if __name__ == "__main__":
             print("-" * splitter_len + "\n{:>3}/{:<3} {} {}".format(
                 i,
                 total_tests,
-                pass_string if test_result == test[expected_key] else fail_string,
+                pass_string if test_result else fail_string,
                 test[name_key] if test[name_key] != None else ""
             ))
+
+            if test_result:
+                passed_tests += 1
 
             if not args.no_log:
                 with open(test_log_name, "a") as log_file:
                     log_test(log_file, pre_res, res, aft_res, test)
 
-        print("-" * splitter_len+ "\n")
+        print("-" * splitter_len)
+        print(f"{ceil(passed_tests / total_tests * 100)}% passed", end="\n\n")
