@@ -1,89 +1,113 @@
+"""
+    Module for testing console programs
+    V 1.1
+"""
+
 import os
 import sys
-import yaml
 import argparse
 import subprocess
 from math import ceil
+import yaml
 
 # Ключевые строки словаря с тестом
-name_key          = "name"
-pre_command_key   = "pre_command"
-command_key       = "command"
-after_command_key = "after_command"
-expected_key      = "expected"
+NAME_KEY          = "name"
+PRE_COMMAND_KEY   = "pre_command"
+COMMAND_KEY       = "command"
+AFTER_COMMAND_KEY = "after_command"
+EXPECTED_KEY      = "expected"
 
-fail_string = "\033[41m\033[37m\033[4m Failed \033[0m"
-pass_string = "\033[42m\033[37m\033[4m Passed \033[0m"
+FAIL_STRING = "\033[31m Failed \033[0m"
+PASS_STRING = "\033[32m Passed \033[0m"
 
-splitter_len = 79
+def validate_tests(raw_tests):
+    """
+        Function for validating tests, comming from file
+    """
 
-def validate_tests(tests):
     valid_tests = []
 
-    for test in tests:
+    for raw_test in raw_tests:
         # Обязательные параметры теста
-        if expected_key not in test:
+        if EXPECTED_KEY not in raw_test:
             continue
 
-        if command_key not in test:
+        if COMMAND_KEY not in raw_test:
             continue
 
         # Необязательные параметры теста
-        if pre_command_key not in test:
-            test[pre_command_key] = None
+        if PRE_COMMAND_KEY not in raw_test:
+            raw_test[PRE_COMMAND_KEY] = None
 
-        if after_command_key not in test:
-            test[after_command_key] = None
+        if AFTER_COMMAND_KEY not in raw_test:
+            raw_test[AFTER_COMMAND_KEY] = None
 
-        if name_key not in test:
-            test[name_key] = None
+        if NAME_KEY not in raw_test:
+            raw_test[NAME_KEY] = ''
 
-        valid_tests.append(test)
+        valid_tests.append(raw_test)
 
     return valid_tests
 
 def e_call(command):
-    if command == None:
+    """
+        Function for executing shell command
+    """
+
+    if command is not None:
         return None
-    else:
-        return subprocess.run(command,
-            shell=True,
-            capture_output=True)
+
+    return subprocess.run(command,
+        shell=True,
+        check=False,
+        capture_output=True)
 
 def log(stream, result):
-    stream.write("{}".format(result.stdout.decode("utf-8") 
+    """
+        Function for writing command output to stream
+    """
+
+    stream.write("{}".format(result.stdout.decode("utf-8")
         if len(result.stdout) != 0 else "\n"))
 
     if len(result.stderr) != 0:
         stream.write("stderr:\n{}\n".format(result.stderr.decode("utf-8")))
 
-def log_test(stream, p_res, res, a_res, test):
-    if (p_res != None):
-        stream.write("Pre command: {}\n".format(test[pre_command_key]))
+def log_test(stream, p_res, c_res, a_res, test_case):
+    """
+        Function for writing test results to stream
+    """
+
+    if p_res is not None:
+        stream.write("Pre command: {}\n".format(test_case[PRE_COMMAND_KEY]))
         log(stream, p_res)
         stream.write("\n" + "=" * 5 + ">\n\n")
 
 
-    stream.write("Command: {}\n".format(test[command_key]))
-    log(stream, res)
+    stream.write("Command: {}\n".format(test_case[COMMAND_KEY]))
+    log(stream, c_res)
     stream.write("return:   {}\nexpected: {}\n".format(
-        res.returncode,
-        test[expected_key]
+        c_res.returncode,
+        test_case[EXPECTED_KEY]
     ))
 
-    if (a_res != None):
+    if a_res is not None:
         stream.write("\n" + "=" * 5 + ">\n\n")
-        stream.write("After command: {}\n".format(test[after_command_key]))
+        stream.write("After command: {}\n".format(test_case[AFTER_COMMAND_KEY]))
         log(stream, a_res)
 
-    stream.write("\n" + "=" * splitter_len + "\n\n")
+    stream.write("\n" + "=" * 79 + "\n\n")
 
 if __name__ == "__main__":
-    argparser = argparse.ArgumentParser(description="Test util")
-    argparser.add_argument("--no-log", "-n", help="turn off logging",
+    # Определение CLI
+    argparser = argparse.ArgumentParser(description='Util for testing \
+        console programs')
+    argparser.add_argument('--no-log', '-n', help='turn off logging',
         action='store_true')
-    argparser.add_argument("--test-dir", "-t",
-        help="point to tests dir [default .]", default=".")
+    argparser.add_argument('--minimum', '-m', help='minimaze console output',
+        action='store_true', default=False)
+    argparser.add_argument('--test-dir', '-t',
+        help='point to tests dir [default .]', default='.')
     args = argparser.parse_args()
 
     # Получение всех файлов, находящихся в одной директории с этим файлом
@@ -94,24 +118,27 @@ if __name__ == "__main__":
         print(f"Can not look for tests at {args.test_dir}")
         sys.exit(1)
 
-    if all_files.count == 0:
-        print("No test groups found")
-        exit(1)
-
-    test_files = [file for file in all_files 
+    # Поиск YAML файлов с тестами
+    test_files = [file for file in all_files
         if file.find(".yml") != -1 or file.find(".yaml") != -1]
 
+    if test_files.count == 0:
+        print("No test groups found")
+        sys.exit(1)
+
+    # Обработка тестов
     for test_file in test_files:
         with open(test_file) as yaml_config:
             tests = yaml.load(yaml_config, Loader=yaml.CLoader)
 
         test_group_name = os.path.splitext(os.path.basename(test_file))[0]
-        print(f"Test group - {test_group_name}")
+        print(f"Test group: {test_group_name}")
 
         tests = validate_tests(tests)
+        if len(tests) == 0:
+            continue
 
-        total_tests = len(tests)
-        print(f"Found {total_tests} tests")
+        print(f"Found {len(tests)} tests")
 
         test_log_name = f"{test_group_name}_log.txt"
         if not args.no_log and os.path.exists(test_log_name):
@@ -119,31 +146,26 @@ if __name__ == "__main__":
 
         passed_tests = 0
         for i, test in enumerate(tests, start=1):
-            pre_res = None
-            res     = None
-            aft_res = None
+            pre_res = e_call(test[PRE_COMMAND_KEY])
+            res     = e_call(test[COMMAND_KEY])
+            aft_res = e_call(test[AFTER_COMMAND_KEY])
 
-            pre_res = e_call(test[pre_command_key])
-
-            res = e_call(test[command_key])
-            test_result = res.returncode == test[expected_key]
-
-            aft_res = e_call(test[after_command_key])
-
-            # Вывод информации в консоль
-            print("-" * splitter_len + "\n{:>3}/{:<3} {} {}".format(
-                i,
-                total_tests,
-                pass_string if test_result else fail_string,
-                test[name_key] if test[name_key] != None else ""
-            ))
-
-            if test_result:
+            if res.returncode == test[EXPECTED_KEY]:
+                RESULT_STRING = PASS_STRING
                 passed_tests += 1
+            else:
+                RESULT_STRING = FAIL_STRING
+
+            if not args.minimum:
+                print("{:>3}/{:<3} {} {}".format(
+                    i,
+                    len(tests),
+                    RESULT_STRING,
+                    test[NAME_KEY]
+                ))
 
             if not args.no_log:
                 with open(test_log_name, "a") as log_file:
                     log_test(log_file, pre_res, res, aft_res, test)
 
-        print("-" * splitter_len)
-        print(f"{ceil(passed_tests / total_tests * 100)}% passed", end="\n\n")
+        print(f"{ceil(passed_tests / len(tests) * 100)}% passed", end="\n\n")
