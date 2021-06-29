@@ -1,6 +1,6 @@
 """
     Module for testing console programs
-    V 1.1
+    V 1.2
 """
 
 import os
@@ -54,7 +54,7 @@ def e_call(command):
         Function for executing shell command
     """
 
-    if command is not None:
+    if command is None:
         return None
 
     return subprocess.run(command,
@@ -108,10 +108,17 @@ if __name__ == "__main__":
         action='store_true', default=False)
     argparser.add_argument('--test-dir', '-t',
         help='point to tests dir [default .]', default='.')
+    argparser.add_argument('--clean', '-c', help='shell command for cleaning')
     args = argparser.parse_args()
 
-    # Получение всех файлов, находящихся в одной директории с этим файлом
     os.chdir(os.path.split(os.path.abspath(sys.argv[0]))[0])
+
+    # Выполнение команды очистки результатов тестирования
+    if args.clean:
+        e_call(args.clean)
+        sys.exit(0)
+
+    # Получение всех файлов, находящихся в одной директории с этим файлом
     try:
         all_files = os.listdir(args.test_dir)
     except FileNotFoundError:
