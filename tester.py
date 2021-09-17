@@ -107,11 +107,18 @@ if __name__ == "__main__":
     argparser.add_argument('--minimum', '-m', help='minimaze console output',
         action='store_true', default=False)
     argparser.add_argument('--test-dir', '-t',
-        help='point to tests dir [default .]', default='.')
+        help='point to dir with groups of tests', default=os.getcwd())
     argparser.add_argument('--clean', '-c', help='shell command for cleaning')
     args = argparser.parse_args()
 
-    os.chdir(os.path.split(os.path.abspath(sys.argv[0]))[0])
+    # Рабочей директорией становится либо директория из которой вызвали скрипт
+    # (задаётся по умолчанию для агрумента командной строки), либо указанная в
+    # качестве аргумента
+    try:
+        os.chdir(args.test_dir)
+    except FileNotFoundError:
+        print(f"Bad directory: {args.test_dir}")
+        sys.exit(1)
 
     # Выполнение команды очистки результатов тестирования
     if args.clean:
@@ -120,7 +127,7 @@ if __name__ == "__main__":
 
     # Получение всех файлов, находящихся в одной директории с этим файлом
     try:
-        all_files = os.listdir(args.test_dir)
+        all_files = os.listdir()
     except FileNotFoundError:
         print(f"Can not look for tests at {args.test_dir}")
         sys.exit(1)

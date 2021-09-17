@@ -1,5 +1,0 @@
-# Нужен пакет pip-tools
-# pip-compile -q requirements.in
-# pip-sync
-
-PyYAML>=5.4.1
