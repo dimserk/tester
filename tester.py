@@ -152,8 +152,8 @@ if __name__ == "__main__":
         if len(tests) == 0:
             print('No valid tests found!')
             continue
-        else:
-            print(f"Found {len(tests)} tests")
+
+        print(f"Found {len(tests)} tests")
 
         test_log_name = f"{test_group_name}_log.txt"
         if not args.no_log and os.path.exists(test_log_name):
